@@ -1,7 +1,6 @@
 extern crate core;
 
 use std::env;
-use diesel::result::{DatabaseErrorKind, Error};
 use my_todo::db::*;
 
 /// A CLI tool for interacting with the to-do app database.
@@ -16,6 +15,7 @@ fn help() {
     println!("\tdelete <title>: Delete task with title");
 }
 
+/// CLI entry point: calls subcommand functions based on user input.
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -27,12 +27,13 @@ fn main() {
         "help" => help(),
         "new" => new_task(&args[2..]),
         "show" => show_tasks(&args[2..]),
-        "finish" => mark_task_done(&args[2..]),
+        "finish" => finish(&args[2..]),
         "delete" => delete(&args[2..]),
         _ => help(),
     }
 }
 
+/// Calls database function to create new task and handles errors.
 fn new_task(args: &[String]) {
     if args.len() != 1 {
         println!("new: expects one argument, got {}", args.len());
@@ -42,15 +43,11 @@ fn new_task(args: &[String]) {
     let conn = establish_connection();
     match create_task(&conn, &args[0]) {
         Ok(_) => (),
-        Err(err) => match err {
-            Error::DatabaseError(DatabaseErrorKind::UniqueViolation, err) => {
-                println!("new: a task with title '{}' already exists", &args[0])
-            },
-            _ => println!("An error occurred while attempting to create the task")
-        }
-    };
+        Err(msg) => println!("{}", msg),
+    }
 }
 
+/// Calls database function to list all tasks.
 fn show_tasks(args: &[String]) {
     if args.len() > 0 {
         println!("show: unexpected argument");
@@ -71,7 +68,8 @@ fn show_tasks(args: &[String]) {
     }
 }
 
-fn mark_task_done(args: &[String]) {
+/// Calls database function to update task status. Handles any errors.
+fn finish(args: &[String]) {
     if args.len() != 2 {
         println!("finish: expects two arguments, got {}", args.len());
         help();
@@ -85,13 +83,13 @@ fn mark_task_done(args: &[String]) {
         } else { panic!("finish: second argument must be 0 or 1")}
     };
     let conn = establish_connection();
-    let task_query_result = query_tasks_by_title(&conn, &args[0]).pop();
-    match task_query_result {
-        Some(task) => set_task_done_status(&conn, task.id, done_status),
-        None => println!("No task has title '{}'", &args[0]),
+    match query_tasks_by_title(&conn, &args[0]) {
+        Ok(task) => set_task_done_status(&conn, task.id, done_status),
+        Err(msg) => println!("{}", msg),
     };
 }
 
+/// Calls database function to delete a task, handling any errors.
 fn delete(args: &[String]) {
     if args.len() < 1 {
         println!("delete: expects one argument, got {}", args.len());
@@ -99,9 +97,8 @@ fn delete(args: &[String]) {
         return;
     };
     let conn = establish_connection();
-    let task_query_result = query_tasks_by_title(&conn, &args[0]).pop();
-    match task_query_result {
-        Some(task) => delete_task(&conn, task.id),
-        None => println!("No task has title '{}'", &args[0]),
+    match query_tasks_by_title(&conn, &args[0]) {
+        Ok(task) => delete_task(&conn, task.id),
+        Err(msg) => println!("{}", msg),
     };
 }
