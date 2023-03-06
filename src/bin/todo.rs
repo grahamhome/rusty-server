@@ -1,16 +1,18 @@
 extern crate core;
 
 use std::env;
-use my_todo::db::{create_task, list_tasks, query_tasks_by_title, set_task_done_status, establish_connection};
+use my_todo::db::*;
 
 /// A CLI tool for interacting with the to-do app database.
 
 
 fn help() {
     println!("subcommands:");
+    println!("\thelp: show these instructions");
     println!("\tnew <title>: create a new task");
     println!("\tshow: show list of tasks");
-    println!("\tfinish <title> <done>: mark task with title as done (1) or not done (0)")
+    println!("\tfinish <title> <done>: mark task with title as done (1) or not done (0)");
+    println!("\tdelete <title>: Delete task with title");
 }
 
 fn main() {
@@ -21,16 +23,18 @@ fn main() {
     }
     let subcommand = &args[1];
     match subcommand.as_ref() {
+        "help" => help(),
         "new" => new_task(&args[2..]),
         "show" => show_tasks(&args[2..]),
         "finish" => mark_task_done(&args[2..]),
+        "delete" => delete(&args[2..]),
         _ => help(),
     }
 }
 
 fn new_task(args: &[String]) {
-    if args.len() < 1 {
-        println!("new: missing <title>");
+    if args.len() != 1 {
+        println!("new: expects one argument, got {}", args.len());
         help();
         return;
     }
@@ -60,7 +64,7 @@ fn show_tasks(args: &[String]) {
 
 fn mark_task_done(args: &[String]) {
     if args.len() != 2 {
-        println!("finish: expects two arguments");
+        println!("finish: expects two arguments, got {}", args.len());
         help();
         return;
     }
@@ -75,6 +79,20 @@ fn mark_task_done(args: &[String]) {
     let task_query_result = query_tasks_by_title(&conn, &args[0]).pop();
     match task_query_result {
         Some(task) => set_task_done_status(&conn, task.id, done_status),
+        None => println!("No task has title '{}'", &args[0]),
+    };
+}
+
+fn delete(args: &[String]) {
+    if args.len() < 1 {
+        println!("delete: expects one argument, got {}", args.len());
+        help();
+        return;
+    };
+    let conn = establish_connection();
+    let task_query_result = query_tasks_by_title(&conn, &args[0]).pop();
+    match task_query_result {
+        Some(task) => delete_task(&conn, task.id),
         None => println!("No task has title '{}'", &args[0]),
     };
 }

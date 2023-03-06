@@ -35,3 +35,7 @@ pub fn set_task_done_status(connection: &SqliteConnection, task_id: i32, done_st
     };
     diesel::update(schema::task::table.find(task_id)).set(schema::task::done.eq(done_status)).execute(connection).expect(format!("Error updating task with id {}", task_id).as_str());
 }
+
+pub fn delete_task(connection: &SqliteConnection, task_id: i32) {
+    diesel::delete(schema::task::table.find(task_id)).execute(connection).expect(format!("Error deleting task with id {}", task_id).as_str());
+}
