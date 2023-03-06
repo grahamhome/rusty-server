@@ -9,13 +9,12 @@ pub fn establish_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", db))
 }
 
-pub fn create_task(connection: &SqliteConnection, title: &str) {
+pub fn create_task(connection: &SqliteConnection, title: &str) -> QueryResult<usize> {
     let task = models::NewTask { title, done: 0 };
 
     diesel::insert_into(schema::task::table)
         .values(&task)
         .execute(connection)
-        .expect("Error inserting new task");
 }
 
 pub fn list_tasks(connection: &SqliteConnection) -> Vec<models::Task> {

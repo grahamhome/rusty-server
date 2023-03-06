@@ -1,6 +1,7 @@
 extern crate core;
 
 use std::env;
+use diesel::result::{DatabaseErrorKind, Error};
 use my_todo::db::*;
 
 /// A CLI tool for interacting with the to-do app database.
@@ -39,7 +40,15 @@ fn new_task(args: &[String]) {
         return;
     }
     let conn = establish_connection();
-    create_task(&conn, &args[0]);
+    match create_task(&conn, &args[0]) {
+        Ok(_) => (),
+        Err(err) => match err {
+            Error::DatabaseError(DatabaseErrorKind::UniqueViolation, err) => {
+                println!("new: a task with title '{}' already exists", &args[0])
+            },
+            _ => println!("An error occurred while attempting to create the task")
+        }
+    };
 }
 
 fn show_tasks(args: &[String]) {
