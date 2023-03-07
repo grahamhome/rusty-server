@@ -1,10 +1,9 @@
 extern crate core;
 
-use std::env;
 use my_todo::db::*;
+use std::env;
 
 /// A CLI tool for interacting with the to-do app database.
-
 
 fn help() {
     println!("subcommands:");
@@ -80,7 +79,9 @@ fn finish(args: &[String]) {
             true
         } else if &args[1] == "0" {
             false
-        } else { panic!("finish: second argument must be 0 or 1")}
+        } else {
+            panic!("finish: second argument must be 0 or 1")
+        }
     };
     let conn = establish_connection();
     match query_tasks_by_title(&conn, &args[0]) {

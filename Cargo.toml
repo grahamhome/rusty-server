@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 diesel = { version = "1.0.0", features = ["sqlite"] }
+rocket = "0.4.2"
