@@ -10,7 +10,7 @@ pub struct NewTask<'a> {
 /// This has to be defined as a separate struct because we want to
 /// be able to insert a task without an ID as it will be generated
 /// for us, but we want to get the ID when we query a task.
-#[derive(Queryable, Serialize)]
+#[derive(Queryable)]
 pub struct Task {
     pub id: i32,
     pub title: String,

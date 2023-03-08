@@ -10,7 +10,7 @@ extern crate rocket_contrib;
 extern crate serde;
 
 use my_todo::db::models::Task;
-use my_todo::db::{establish_connection, list_tasks};
+use my_todo::db::{list_tasks};
 use rocket_contrib::{json::Json, databases::diesel};
 
 #[database("sqlite_tasks")]
@@ -18,12 +18,49 @@ struct TasksDbConn(diesel::SqliteConnection);
 
 #[derive(Serialize)]
 struct JsonApiResponse {
-    data: Vec<Task>
+    data: Vec<TaskWrapper>
+}
+
+#[derive(Serialize)]
+struct TaskWrapper {
+    id: i32,
+    #[serde(rename = "type")]
+    type_name: String,
+    attributes: TaskAttributes,
+}
+
+impl TaskWrapper {
+    fn new(task: Task) -> Self {
+        Self {
+            id: task.id,
+            type_name: String::from("task"),
+            attributes: TaskAttributes::new(task)
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct TaskAttributes {
+    title: String,
+    status: String,
+}
+
+impl TaskAttributes {
+    fn new(task: Task) -> Self {
+        Self {
+            title: task.title,
+            status: match task.done {
+                0 => String::from("Not finished"),
+                1 => String::from("Finished"),
+                _ => panic!("Task status should always be 0 or 1")
+            },
+        }
+    }
 }
 
 #[get("/tasks")]
 fn tasks_get(conn: TasksDbConn) -> Json<JsonApiResponse> {
-    Json(JsonApiResponse{ data: list_tasks(&*conn), })
+    Json(JsonApiResponse{ data: list_tasks(&*conn).into_iter().map(|task| TaskWrapper::new(task)).collect::<Vec<TaskWrapper>>(), })
 }
 
 fn main() {
