@@ -11,7 +11,10 @@ extern crate serde;
 
 use my_todo::db::models::Task;
 use my_todo::db::{establish_connection, list_tasks};
-use rocket_contrib::json::Json;
+use rocket_contrib::{json::Json, databases::diesel};
+
+#[database("sqlite_tasks")]
+struct TasksDbConn(diesel::SqliteConnection);
 
 #[derive(Serialize)]
 struct JsonApiResponse {
@@ -19,10 +22,10 @@ struct JsonApiResponse {
 }
 
 #[get("/tasks")]
-fn tasks_get() -> Json<JsonApiResponse> {
-    Json(JsonApiResponse{ data: list_tasks(&establish_connection()), })
+fn tasks_get(conn: TasksDbConn) -> Json<JsonApiResponse> {
+    Json(JsonApiResponse{ data: list_tasks(&*conn), })
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![tasks_get]).launch();
+    rocket::ignite().attach(TasksDbConn::fairing()).mount("/", routes![tasks_get]).launch();
 }
