@@ -17,8 +17,8 @@ use rocket_contrib::{json::Json, databases::diesel};
 struct TasksDbConn(diesel::SqliteConnection);
 
 #[derive(Serialize)]
-struct JsonApiResponse {
-    data: Vec<TaskWrapper>
+struct JsonApiResponse<T> {
+    data: Vec<T>
 }
 
 #[derive(Serialize)]
@@ -59,7 +59,7 @@ impl TaskAttributes {
 }
 
 #[get("/tasks")]
-fn tasks_get(conn: TasksDbConn) -> Json<JsonApiResponse> {
+fn tasks_get(conn: TasksDbConn) -> Json<JsonApiResponse<TaskWrapper>> {
     Json(JsonApiResponse{ data: list_tasks(&*conn).into_iter().map(|task| TaskWrapper::new(task)).collect::<Vec<TaskWrapper>>(), })
 }
 
